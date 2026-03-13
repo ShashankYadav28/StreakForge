@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct HabitLog:Identifiable {
+struct HabitLog:Identifiable,Codable {
     
     var id  = UUID()
     var habitID:Habit.ID

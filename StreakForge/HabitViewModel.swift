@@ -9,6 +9,14 @@ import Foundation
 import Combine
 
 class HabitViewModel:ObservableObject {
+    
+    let habitKey = "savedHabis"
+    let logKey = "savedHabitsLogs"
+    
+    init() {
+        loadHabits()
+        loadLogs()
+    }
     @Published var habits:[Habit] = []
     
     // habit log is the collection of the progress ovew teh tinmeline
@@ -16,6 +24,7 @@ class HabitViewModel:ObservableObject {
     
     func addHabit(habit:Habit) {
         habits.append(habit)
+        saveHabit()
     }
     
     func deleteHabit(habitID:Habit.ID) {
@@ -25,6 +34,8 @@ class HabitViewModel:ObservableObject {
         habitLogs.removeAll {
             $0.habitID == habitID
         }
+        saveHabit()
+        saveLogs()
         
     }
     func goal(habit:Habit)->(Int){
@@ -82,6 +93,7 @@ class HabitViewModel:ObservableObject {
             let result  = HabitLog(habitID: habitID, count: 1, date: todaysDate)
             habitLogs.append(result)
         }
+        saveLogs()
        
     }
     
@@ -180,6 +192,60 @@ class HabitViewModel:ObservableObject {
         
         let remaining = goalCompletion - todaysCompletion
         return max(Double(remaining),0.0)
+    }
+    
+    func saveHabit()  {
+        do {
+            let data = try JSONEncoder().encode(habits)
+            UserDefaults.standard.set(data, forKey: habitKey)
+        } catch {
+            print(error.localizedDescription)
+        }
+      
+    }
+    func loadHabits() {
+        let data  = UserDefaults.standard.data(forKey: habitKey)
+        guard let data  = data  else {
+            return
+        }
+        do {
+            let decodedData = try JSONDecoder().decode([Habit].self, from: data)
+            habits = decodedData
+        } catch  {
+            print(error.localizedDescription)
+            
+        }
+        
+
+    }
+    
+    func saveLogs() {
+        do {
+            let data = try JSONEncoder().encode(habitLogs)
+            UserDefaults.standard.set(data, forKey: logKey)
+        }
+        catch  {
+            print(error.localizedDescription)
+        }
+        
+    }
+    
+    func loadLogs() {
+        
+        let data = UserDefaults.standard.data(forKey: logKey)
+        guard let data = data else {
+            return
+        }
+        
+        do  {
+            
+            let decodedData = try JSONDecoder().decode([HabitLog].self, from: data)
+            habitLogs = decodedData
+            
+        } catch {
+            print(error.localizedDescription)
+        }
+        
     }
 }
 
