@@ -22,9 +22,17 @@ class HabitViewModel:ObservableObject {
     // habit log is the collection of the progress ovew teh tinmeline
     @Published var habitLogs:[HabitLog] = []
     
-    func addHabit(habit:Habit) {
-        habits.append(habit)
-        saveHabit()
+    func addHabit(habit:Habit)->Bool{
+        
+        if checkHabit(habit: habit) {
+            return false
+        }
+        else {
+            habits.append(habit)
+            saveHabit()
+            return true
+        }
+  
     }
     
     func deleteHabit(habitID:Habit.ID) {
@@ -113,33 +121,78 @@ class HabitViewModel:ObservableObject {
     
     func streakCompletion (habitID:Habit.ID) ->Int {
         
-        let habitlogsForHabit = habitLogs.filter { habit in
-            habit.habitID == habitID
-        }.sorted { first, second in
-            first.date>second.date
+//        let habitlogsForHabit = habitLogs.filter { habit in
+//            habit.habitID == habitID
+//        }.sorted { first, second in
+//            first.date>second.date
+//        }
+//        let foundHabit  = habits.first {
+//            $0.id == habitID
+//        }
+//        
+//        guard let habit  = foundHabit else {
+//            return 0
+//        }
+//        var streak:Int = 0
+//        let habitGoal = goal(habit: habit)
+//        let today  = Date()
+//        for log in habitlogsForHabit {
+//            let isToday = Calendar.current.isDate(log.date, inSameDayAs: today)
+//            if isToday && log.count<habitGoal {
+//                continue
+//            }
+//        
+//            if log.count>=habitGoal {
+//                streak+=1
+//            }
+//            else {
+//                break
+//            }
+//        }
+//        return streak
+//
+        let todaysDate = Date()
+        var currentDate = Calendar.current.startOfDay(for: todaysDate)
+        var streak:Int = 0
+      
+        let habitForCurentDateLog = habits.first { habit in
+            habit.id == habitID
         }
-        let foundHabit  = habits.first {
-            $0.id == habitID
-        }
-        
-        guard let habit  = foundHabit else {
+        guard let habitForCurentDateLog = habitForCurentDateLog else {
             return 0
         }
-        var streak:Int = 0
-        let habitGoal = goal(habit: habit)
-        let today  = Date()
-        for log in habitlogsForHabit {
-            let isToday = Calendar.current.isDate(log.date, inSameDayAs: today)
-            if isToday && log.count<habitGoal {
-                continue
-            }
         
-            if log.count>=habitGoal {
+        let habitGoal = goal(habit: habitForCurentDateLog)
+        let todaysLog = habitLogs.first  {
+            $0.habitID == habitID && Calendar.current.isDate($0.date, inSameDayAs: todaysDate)
+        }
+ 
+        if (todaysLog?.count ?? 0)<habitGoal {
+            if let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: currentDate) {
+                currentDate = yesterday
+            }
+        }
+        
+        
+        while true {
+            
+            let logCurrentDate = habitLogs.first { habitLog in
+                Calendar.current.isDate(habitLog.date, inSameDayAs: currentDate) && habitLog.habitID == habitID
+            }
+            guard let logCurrentDate = logCurrentDate  else {
+                return streak
+            }
+            
+            if (logCurrentDate.count>=habitGoal) {
                 streak+=1
             }
             else {
                 break
             }
+            guard let newDate = Calendar.current.date(byAdding: .day, value: -1, to: currentDate) else {
+                break
+            }
+            currentDate = newDate
         }
         return streak
         
@@ -244,6 +297,13 @@ class HabitViewModel:ObservableObject {
             
         } catch {
             print(error.localizedDescription)
+        }
+        
+    }
+    
+    func checkHabit(habit:Habit) -> Bool {
+        habits.contains{
+            $0.title.trimmingCharacters(in: .whitespaces).lowercased() == habit.title.trimmingCharacters(in: .whitespaces).lowercased() && $0.frequency == habit.frequency
         }
         
     }
