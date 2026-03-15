@@ -7,13 +7,13 @@
 
 import Foundation
 
-struct Habit:Identifiable,Codable {
+struct Habit:Identifiable,Codable{
     var id  = UUID()
     var title:String
     var frequency:Frequency
     var createdDate:Date = Date()
     
-    enum Frequency:Codable {
+    enum Frequency:Codable,Equatable {
         case daily(goalsPerday:Int)
         case weekly(goalsPerWeek:Int)
         case custom(days:[Weekday],goalPerDay:Int)
